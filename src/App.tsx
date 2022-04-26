@@ -3,12 +3,14 @@ import List from "./components/List";
 import InputWithLabel from "./components/InputWithLabel";
 import logo from "./asset/logo.png";
 import usePersistence from "./hooks/usePersistence";
-import React, { useEffect, useState, useReducer, useCallback } from "react";
+import React, { useEffect, useState, useReducer, useCallback, useMemo } from "react";
 import axios from "axios";
+import { useDebounce } from './hooks/useDebouncer';
+import { StateType, StoryType, ActionType } from "./types";
 
 const title: string = "React Training";
 
-function storiesReducer(state: any, action: any) {
+function storiesReducer(state: StateType, action: ActionType) {
   switch (action.type) {
     case "SET_STORIES":
       return { data: action.payload.data, isError: false, isLoading: false };
@@ -30,17 +32,27 @@ const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
 
 function App(): JSX.Element {
   const [searchText, setSearchText] = usePersistence("searchTerm", "React");
-  const [url, setUrl] = useState(API_ENDPOINT + searchText);
+  const deBouncedUrl = useDebounce(API_ENDPOINT + searchText);
+
   const [stories, dispatchStories] = useReducer(storiesReducer, {
     data: [],
     isError: false,
     isLoading: false,
   });
 
+  const sumOfComments = useMemo(
+    () =>
+      stories.data.reduce(
+        (acc: number, current: StoryType) => acc + current.num_comments,
+        0
+      ),
+    [stories]
+  );
+
   const handleFetchStories = useCallback(async () => {
     dispatchStories({ type: "INIT_FETCH" });
     try {
-      const response = await axios.get(url);
+      const response = await axios.get(deBouncedUrl);
       dispatchStories({
         type: "SET_STORIES",
         payload: { data: response.data.hits },
@@ -48,7 +60,7 @@ function App(): JSX.Element {
     } catch {
       dispatchStories({ type: "FETCH_FAILURE" });
     }
-  }, [url]);
+  }, [deBouncedUrl]);
 
   useEffect(() => {
     handleFetchStories();
@@ -58,14 +70,9 @@ function App(): JSX.Element {
     setSearchText(event.target.value);
   }
 
-  function handleDeleteClick(objectId: number) {
-    dispatchStories({ type: "REMOVE_STORY", payload: {id: objectId}})
-  }
-
-  function handleSubmitClick(e: any) {
-    e.preventDefault();
-    setUrl(API_ENDPOINT + searchText);
-  }
+  const handleDeleteClick = useCallback((objectId: number) => {
+    dispatchStories({ type: "REMOVE_STORY", payload: { id: objectId } });
+  }, []);
 
   if (stories.isError) {
     return (
@@ -82,11 +89,11 @@ function App(): JSX.Element {
           <h1>{title}</h1>
           <img src={logo} />
         </div>
+        <p>Sum: {sumOfComments}</p>
         <InputWithLabel
           searchText={searchText}
           onChange={handleChange}
           id="searchBox"
-          onSearchSubmit={handleSubmitClick}
         >
           Search
         </InputWithLabel>
