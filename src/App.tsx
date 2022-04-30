@@ -1,14 +1,21 @@
-import "./App.css";
+import styles from "./App.module.css";
 import List from "./components/List";
 import InputWithLabel from "./components/InputWithLabel";
-import logo from "./asset/logo.png";
+import logo from "./assets/logo.png";
 import usePersistence from "./hooks/usePersistence";
-import React, { useEffect, useState, useReducer, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useReducer,
+  useCallback,
+  createContext,
+} from "react";
 import axios from "axios";
-import { useDebounce } from './hooks/useDebouncer';
+import { useDebounce } from "./hooks/useDebouncer";
 import { StateType, StoryType, ActionType } from "./types";
+import { Link } from "react-router-dom";
 
-const title: string = "React Training";
+export const title: string = "React Training";
 
 function storiesReducer(state: StateType, action: ActionType) {
   switch (action.type) {
@@ -30,9 +37,15 @@ function storiesReducer(state: StateType, action: ActionType) {
 
 const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
 
+interface AppContextType {
+  onClickDelete: (e: number) => void;
+}
+
+export const AppContext = createContext<AppContextType | null>(null);
+
 function App(): JSX.Element {
   const [searchText, setSearchText] = usePersistence("searchTerm", "React");
-  const deBouncedUrl = useDebounce(API_ENDPOINT + searchText);
+  const debouncedUrl = useDebounce(API_ENDPOINT + searchText);
 
   const [stories, dispatchStories] = useReducer(storiesReducer, {
     data: [],
@@ -52,7 +65,7 @@ function App(): JSX.Element {
   const handleFetchStories = useCallback(async () => {
     dispatchStories({ type: "INIT_FETCH" });
     try {
-      const response = await axios.get(deBouncedUrl);
+      const response = await axios.get(debouncedUrl);
       dispatchStories({
         type: "SET_STORIES",
         payload: { data: response.data.hits },
@@ -60,7 +73,7 @@ function App(): JSX.Element {
     } catch {
       dispatchStories({ type: "FETCH_FAILURE" });
     }
-  }, [deBouncedUrl]);
+  }, [debouncedUrl]);
 
   useEffect(() => {
     handleFetchStories();
@@ -85,7 +98,7 @@ function App(): JSX.Element {
   return (
     <div>
       <nav>
-        <div className="heading">
+        <div className={styles.heading}>
           <h1>{title}</h1>
           <img src={logo} />
         </div>
@@ -97,11 +110,16 @@ function App(): JSX.Element {
         >
           Search
         </InputWithLabel>
+        <Link to="/login" state={{ id: "1234" }}>
+          <h6>Login</h6>
+        </Link>
       </nav>
       {stories.isLoading ? (
         <h1 style={{ marginTop: "10rem" }}>Loading</h1>
       ) : (
-        <List listOfItems={stories.data} onClickDelete={handleDeleteClick} />
+        <AppContext.Provider value={{ onClickDelete: handleDeleteClick }}>
+          <List listOfItems={stories.data} />
+        </AppContext.Provider>
       )}
     </div>
   );
