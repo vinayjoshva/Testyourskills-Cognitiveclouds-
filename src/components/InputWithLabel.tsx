@@ -1,5 +1,5 @@
 import { count } from "console";
-import React, {FormEvent} from "react";
+import React, { FormEvent } from "react";
 import "./InputWithLabel.css";
 
 type InputWithLabelProps = {
@@ -21,7 +21,6 @@ const InputWithLabel = ({
     <div>
       <label htmlFor={id}>{children} </label>
       <input value={searchText} id={id} type={type} onChange={onChange} />
-      <button type="submit">Submit</button>
     </div>
   );
 };
