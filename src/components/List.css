@@ -14,18 +14,18 @@ table a {
 }
 
 th {
-  background-color: rgb(12, 191, 194);
-  color: black;
+  background-color: var(--indigo);
+  color: var(--backgroundColor);
 }
 
 th,
 td {
   padding: 10px;
   text-align: left;
+  flex: 1;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  flex: 1;
 }
 
 th:nth-child(2),
@@ -35,5 +35,18 @@ th:nth-child(2),
 }
 
 tr:nth-child(even) {
-  background-color: grey;
+  background-color: var(--foregroundColor);
+}
+
+th:hover {
+  background-color: var(--indigo-dark);
+  cursor: pointer;
+}
+
+.deleteButton {
+  cursor: pointer;
+}
+
+.deleteButton:hover {
+  color: rgb(247, 83, 83);
 }
